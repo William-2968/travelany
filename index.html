@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天去哪裡</title>
+    <!-- Tailwind CSS CDN for utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom fonts for a modern and readable look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+        /* Basic body styling for centering and background */
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background for a clean feel */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Main container for the slot machine application */
+        .container {
+            background-color: #ffffff; /* White background */
+            border-radius: 20px; /* Rounded corners for a softer look */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+            padding: 30px;
+            text-align: center;
+            max-width: 450px; /* Max width to ensure good mobile display */
+            width: 100%; /* Full width within max-width */
+            border: 2px solid #cbd5e1; /* Light border for definition */
+        }
+
+        /* Title styling */
+        h1 {
+            color: #2c3e50; /* Dark blue-gray color */
+            margin-bottom: 30px;
+            font-size: 2.5rem; /* Large font size for prominence */
+            font-weight: 700; /* Bold text */
+        }
+
+        /* Slot display area styling */
+        .slot-display {
+            background-color: #ecf0f1; /* Light gray background */
+            border-radius: 15px; /* Rounded corners */
+            padding: 25px 15px;
+            margin-bottom: 30px;
+            min-height: 120px; /* Ensures consistent height during animation */
+            display: flex;
+            flex-direction: column; /* Stack flag and name vertically */
+            justify-content: center;
+            align-items: center;
+            font-size: 2.2rem; /* Large font for readability */
+            font-weight: 700;
+            color: #34495e; /* Darker text color */
+            overflow: hidden; /* Hides content outside the bounds during animation */
+            position: relative; /* Needed for absolute positioning of slot items if implemented differently */
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.08); /* Inner shadow for depth */
+            border: 1px solid #bdc3c7; /* Light border */
+            transition: transform 0.1s ease-out; /* Smooth transition for subtle animations */
+        }
+
+        /* Styling for flag emojis */
+        .flag-emoji {
+            font-size: 3rem; /* Large flag size */
+            margin-bottom: 10px;
+            display: block; /* Ensures it takes its own line */
+        }
+
+        /* Styling for the result text display */
+        .result-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #27ae60; /* Green color for a positive result */
+            margin-top: 20px;
+            min-height: 60px; /* Reserves space to prevent layout shifts */
+            display: flex; /* Uses flexbox for alignment */
+            align-items: center; /* Vertically centers content */
+            justify-content: center; /* Horizontally centers content */
+            flex-wrap: wrap; /* Allows text to wrap on smaller screens */
+        }
+
+        /* Adjustments for flag emoji within the result text */
+        .result-text .flag-emoji {
+            margin-right: 10px; /* Space between flag and text */
+            margin-bottom: 0; /* Overrides default margin-bottom from .flag-emoji */
+            font-size: 2.5rem; /* Slightly smaller flag in result for better integration */
+        }
+
+        /* Base styling for all buttons */
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 12px; /* Rounded button corners */
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer; /* Indicates interactivity */
+            transition: all 0.3s ease; /* Smooth transitions for hover effects */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* Standard button shadow */
+            text-decoration: none; /* Removes underline from links */
+        }
+
+        /* Styling for the "Start Spin" button */
+        .start-button {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* Blue gradient */
+            color: white; /* White text */
+            border: none; /* No border */
+            margin-bottom: 20px;
+        }
+
+        /* Hover effect for the "Start Spin" button */
+        .start-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2980b9, #3498db); /* Reverse gradient on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+        }
+
+        /* Disabled state for the "Start Spin" button */
+        .start-button:disabled {
+            background: #cccccc; /* Gray background when disabled */
+            cursor: not-allowed; /* Not-allowed cursor */
+            box-shadow: none; /* No shadow when disabled */
+        }
+
+        /* Styling for the "Recommend" button */
+        .recommend-button {
+            background: linear-gradient(135deg, #f39c12, #e67e22); /* Orange gradient */
+            color: white; /* White text */
+            border: none; /* No border */
+            display: none; /* Hidden by default, shown after spin */
+            margin-top: 20px;
+        }
+
+        /* Hover effect for the "Recommend" button */
+        .recommend-button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e67e22, #f39c12); /* Reverse gradient on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* Enhanced shadow on hover */
+        }
+
+        /* Responsive adjustments for smaller screens (e.g., mobile phones) */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem; /* Smaller title on mobile */
+            }
+            .slot-display {
+                font-size: 1.8rem; /* Smaller slot text on mobile */
+                padding: 20px 10px;
+            }
+            .flag-emoji {
+                font-size: 2.5rem; /* Smaller flag in slot on mobile */
+            }
+            .result-text {
+                font-size: 1.5rem; /* Smaller result text on mobile */
+            }
+            .result-text .flag-emoji {
+                font-size: 2rem; /* Smaller flag in result on mobile */
+            }
+            .button {
+                padding: 12px 25px; /* Smaller padding for buttons on mobile */
+                font-size: 1.1rem; /* Smaller font for buttons on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>今天去哪裡</h1>
+
+        <div id="slotDisplay" class="slot-display">
+            <!-- Slot content will be dynamically updated here during spinning -->
+            <span class="flag-emoji" id="slotFlag">🌍</span>
+            <span id="slotCountryName">準備抽籤...</span>
+        </div>
+
+        <button id="startButton" class="button start-button">開始抽籤</button>
+
+        <div id="resultDisplay" class="result-text"></div>
+
+        <a id="recommendButton" class="button recommend-button" target="_blank" rel="noopener noreferrer">熱門景點推薦</a>
+    </div>
+
+    <script>
+        // Helper function to convert a two-letter ISO country code to its corresponding Unicode flag emoji.
+        // For example, "US" becomes "🇺🇸".
+        function getFlagEmoji(countryCode) {
+            // If no country code is provided, return a generic globe or question mark emoji.
+            if (!countryCode) return '❓';
+            // Convert each character of the country code to its regional indicator symbol.
+            // 'A' becomes 0x1F1E6, 'B' becomes 0x1F1E7, and so on.
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 0x1F1E6 + (char.charCodeAt(0) - 'A'.charCodeAt(0)));
+            // Combine the code points into a single string to form the emoji.
+            return String.fromCodePoint(...codePoints);
+        }
+
+        // Get references to DOM elements
+        const slotDisplay = document.getElementById('slotDisplay');
+        const slotFlag = document.getElementById('slotFlag');
+        const slotCountryName = document.getElementById('slotCountryName');
+        const startButton = document.getElementById('startButton');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const recommendButton = document.getElementById('recommendButton');
+
+        // State variables for the spinning animation
+        let spinning = false; // True if the slot machine is currently spinning
+        let currentCountryIndex = 0; // Index of the country currently displayed in the slot
+        let animationStartTime; // Timestamp when the spinning started
+        const totalAnimationDuration = 5000; // Total duration of the spinning animation in milliseconds (5 seconds)
+        const baseFrameInterval = 50; // Base interval for updating the display during rapid spin (50ms = 20 frames/sec)
+
+        // Array to hold country data.
+        // --- 請將您的 Notion 國家資料貼到這裡 ---
+        // 每個物件應包含: chineseName (中文名稱), englishName (英文名稱), flagCode (國旗代碼), continent (洲別)
+        // 範例資料 (請替換為您的實際資料):
+        const countries = [
+            { chineseName: "美國", englishName: "United States", flagCode: "US", continent: "北美洲" },
+            { chineseName: "日本", englishName: "Japan", flagCode: "JP", continent: "亞洲" },
+            { chineseName: "法國", englishName: "France", flagCode: "FR", continent: "歐洲" },
+            { chineseName: "澳洲", englishName: "Australia", flagCode: "AU", continent: "大洋洲" },
+            { chineseName: "巴西", englishName: "Brazil", flagCode: "BR", continent: "南美洲" },
+            { chineseName: "埃及", englishName: "Egypt", flagCode: "EG", continent: "非洲" },
+            { chineseName: "德國", englishName: "Germany", flagCode: "DE", continent: "歐洲" },
+            { chineseName: "加拿大", englishName: "Canada", flagCode: "CA", continent: "北美洲" },
+            { chineseName: "印度", englishName: "India", flagCode: "IN", continent: "亞洲" },
+            { chineseName: "南非", englishName: "South Africa", flagCode: "ZA", continent: "非洲" },
+            { chineseName: "紐西蘭", englishName: "New Zealand", flagCode: "NZ", continent: "大洋洲" },
+            { chineseName: "阿根廷", englishName: "Argentina", flagCode: "AR", continent: "南美洲" },
+            { chineseName: "中國", englishName: "China", flagCode: "CN", continent: "亞洲" },
+            { chineseName: "英國", englishName: "United Kingdom", flagCode: "GB", continent: "歐洲" },
+            { chineseName: "墨西哥", englishName: "Mexico", flagCode: "MX", continent: "北美洲" },
+            { chineseName: "義大利", englishName: "Italy", flagCode: "IT", continent: "歐洲" },
+            { chineseName: "韓國", englishName: "South Korea", flagCode: "KR", continent: "亞洲" },
+            { chineseName: "西班牙", englishName: "Spain", flagCode: "ES", continent: "歐洲" },
+            { chineseName: "俄羅斯", englishName: "Russia", flagCode: "RU", continent: "歐洲/亞洲" },
+            { chineseName: "沙烏地阿拉伯", englishName: "Saudi Arabia", flagCode: "SA", continent: "亞洲" },
+            { chineseName: "瑞典", englishName: "Sweden", flagCode: "SE", continent: "歐洲" },
+            { chineseName: "挪威", englishName: "Norway", flagCode: "NO", continent: "歐洲" },
+            { chineseName: "丹麥", englishName: "Denmark", flagCode: "DK", continent: "歐洲" },
+            { chineseName: "芬蘭", englishName: "Finland", flagCode: "FI", continent: "歐洲" },
+            { chineseName: "瑞士", englishName: "Switzerland", flagCode: "CH", continent: "歐洲" },
+            { chineseName: "荷蘭", englishName: "Netherlands", flagCode: "NL", continent: "歐洲" },
+            { chineseName: "比利時", englishName: "Belgium", flagCode: "BE", continent: "歐洲" },
+            { chineseName: "奧地利", englishName: "Austria", flagCode: "AT", continent: "歐洲" },
+            { chineseName: "希臘", englishName: "Greece", flagCode: "GR", continent: "歐洲" },
+            { chineseName: "土耳其", englishName: "Turkey", flagCode: "TR", continent: "亞洲/歐洲" },
+            { chineseName: "泰國", englishName: "Thailand", flagCode: "TH", continent: "亞洲" },
+            { chineseName: "越南", englishName: "Vietnam", flagCode: "VN", continent: "亞洲" },
+            { chineseName: "印尼", englishName: "Indonesia", flagCode: "ID", continent: "亞洲" },
+            { chineseName: "馬來西亞", englishName: "Malaysia", flagCode: "MY", continent: "亞洲" },
+            { chineseName: "菲律賓", englishName: "Philippines", flagCode: "PH", continent: "亞洲" },
+            { chineseName: "新加坡", englishName: "Singapore", flagCode: "SG", continent: "亞洲" },
+            { chineseName: "阿拉伯聯合大公國", englishName: "United Arab Emirates", flagCode: "AE", continent: "亞洲" },
+            { chineseName: "以色列", englishName: "Israel", flagCode: "IL", continent: "亞洲" },
+            { chineseName: "哥倫比亞", englishName: "Colombia", flagCode: "CO", continent: "南美洲" },
+            { chineseName: "秘魯", englishName: "Peru", flagCode: "PE", continent: "南美洲" },
+            { chineseName: "智利", englishName: "Chile", flagCode: "CL", continent: "南美洲" },
+            { chineseName: "南非", englishName: "South Africa", flagCode: "ZA", continent: "非洲" },
+            { chineseName: "肯亞", englishName: "Kenya", flagCode: "KE", continent: "非洲" },
+            { chineseName: "摩洛哥", englishName: "Morocco", flagCode: "MA", continent: "非洲" },
+            { chineseName: "奈及利亞", englishName: "Nigeria", flagCode: "NG", continent: "非洲" },
+            { chineseName: "紐西蘭", englishName: "New Zealand", flagCode: "NZ", continent: "大洋洲" },
+            { chineseName: "斐濟", englishName: "Fiji", flagCode: "FJ", continent: "大洋洲" },
+            { chineseName: "冰島", englishName: "Iceland", flagCode: "IS", continent: "歐洲" },
+            { chineseName: "愛爾蘭", englishName: "Ireland", flagCode: "IE", continent: "歐洲" },
+            { chineseName: "葡萄牙", englishName: "Portugal", flagCode: "PT", continent: "歐洲" },
+            { chineseName: "捷克", englishName: "Czech Republic", flagCode: "CZ", continent: "歐洲" },
+            { chineseName: "匈牙利", englishName: "Hungary", flagCode: "HU", continent: "歐洲" },
+            { chineseName: "波蘭", englishName: "Poland", flagCode: "PL", continent: "歐洲" },
+            { chineseName: "羅馬尼亞", englishName: "Romania", flagCode: "RO", continent: "歐洲" },
+            { chineseName: "烏克蘭", englishName: "Ukraine", flagCode: "UA", continent: "歐洲" },
+            { chineseName: "克羅埃西亞", englishName: "Croatia", flagCode: "HR", continent: "歐洲" },
+            { chineseName: "塞爾維亞", englishName: "Serbia", flagCode: "RS", continent: "歐洲" },
+            { chineseName: "保加利亞", englishName: "Bulgaria", flagCode: "BG", continent: "歐洲" },
+            { chineseName: "斯洛伐克", englishName: "Slovakia", flagCode: "SK", continent: "歐洲" },
+            { chineseName: "斯洛維尼亞", englishName: "Slovenia", flagCode: "SI", continent: "歐洲" },
+            { chineseName: "立陶宛", englishName: "Lithuania", flagCode: "LT", continent: "歐洲" },
+            { chineseName: "拉脫維亞", englishName: "Latvia", flagCode: "LV", continent: "歐洲" },
+            { chineseName: "愛沙尼亞", englishName: "Estonia", flagCode: "EE", continent: "歐洲" },
+            { chineseName: "孟加拉", englishName: "Bangladesh", flagCode: "BD", continent: "亞洲" },
+            { chineseName: "巴基斯坦", englishName: "Pakistan", flagCode: "PK", continent: "亞洲" },
+            { chineseName: "斯里蘭卡", englishName: "Sri Lanka", flagCode: "LK", continent: "亞洲" },
+            { chineseName: "尼泊爾", englishName: "Nepal", flagCode: "NP", continent: "亞洲" },
+            { chineseName: "蒙古", englishName: "Mongolia", flagCode: "MN", continent: "亞洲" },
+            { chineseName: "哈薩克", englishName: "Kazakhstan", flagCode: "KZ", continent: "亞洲" },
+            { chineseName: "烏茲別克", englishName: "Uzbekistan", flagCode: "UZ", continent: "亞洲" },
+            { chineseName: "約旦", englishName: "Jordan", flagCode: "JO", continent: "亞洲" },
+            { chineseName: "黎巴嫩", englishName: "Lebanon", flagCode: "LB", continent: "亞洲" },
+            { chineseName: "敘利亞", englishName: "Syria", flagCode: "SY", continent: "亞洲" },
+            { chineseName: "伊拉克", englishName: "Iraq", flagCode: "IQ", continent: "亞洲" },
+            { chineseName: "伊朗", englishName: "Iran", flagCode: "IR", continent: "亞洲" },
+            { chineseName: "葉門", englishName: "Yemen", flagCode: "YE", continent: "亞洲" },
+            { chineseName: "阿曼", englishName: "Oman", flagCode: "OM", continent: "亞洲" },
+            { chineseName: "卡達", englishName: "Qatar", flagCode: "QA", continent: "亞洲" },
+            { chineseName: "科威特", englishName: "Kuwait", flagCode: "KW", continent: "亞洲" },
+            { chineseName: "巴林", englishName: "Bahrain", flagCode: "BH", continent: "亞洲" },
+            { chineseName: "賽普勒斯", englishName: "Cyprus", flagCode: "CY", continent: "亞洲/歐洲" },
+            { chineseName: "喬治亞", englishName: "Georgia", flagCode: "GE", continent: "亞洲/歐洲" },
+            { chineseName: "亞美尼亞", englishName: "Armenia", flagCode: "AM", continent: "亞洲" },
+            { chineseName: "亞塞拜然", englishName: "Azerbaijan", flagCode: "AZ", continent: "亞洲" },
+            { chineseName: "古巴", englishName: "Cuba", flagCode: "CU", continent: "北美洲" },
+            { chineseName: "牙買加", englishName: "Jamaica", flagCode: "JM", continent: "北美洲" },
+            { chineseName: "多明尼加", englishName: "Dominican Republic", flagCode: "DO", continent: "北美洲" },
+            { chineseName: "哥斯大黎加", englishName: "Costa Rica", flagCode: "CR", continent: "北美洲" },
+            { chineseName: "巴拿馬", englishName: "Panama", flagCode: "PA", continent: "北美洲" },
+            { chineseName: "委內瑞拉", englishName: "Venezuela", flagCode: "VE", continent: "南美洲" },
+            { chineseName: "厄瓜多", englishName: "Ecuador", flagCode: "EC", continent: "南美洲" },
+            { chineseName: "玻利維亞", englishName: "Bolivia", flagCode: "BO", continent: "南美洲" },
+            { chineseName: "巴拉圭", englishName: "Paraguay", flagCode: "PY", continent: "南美洲" },
+            { chineseName: "烏拉圭", englishName: "Uruguay", flagCode: "UY", continent: "南美洲" },
+            { chineseName: "衣索比亞", englishName: "Ethiopia", flagCode: "ET", continent: "非洲" },
+            { chineseName: "坦尚尼亞", englishName: "Tanzania", flagCode: "TZ", continent: "非洲" },
+            { chineseName: "加納", englishName: "Ghana", flagCode: "GH", continent: "非洲" },
+            { chineseName: "象牙海岸", englishName: "Ivory Coast", flagCode: "CI", continent: "非洲" },
+            { chineseName: "喀麥隆", englishName: "Cameroon", flagCode: "CM", continent: "非洲" },
+            { chineseName: "剛果民主共和國", englishName: "DR Congo", flagCode: "CD", continent: "非洲" },
+            { chineseName: "馬達加斯加", englishName: "Madagascar", flagCode: "MG", continent: "非洲" },
+            { chineseName: "模里西斯", englishName: "Mauritius", flagCode: "MU", continent: "非洲" },
+            { chineseName: "澳洲", englishName: "Australia", flagCode: "AU", continent: "大洋洲" },
+            { chineseName: "巴布亞紐幾內亞", englishName: "Papua New Guinea", flagCode: "PG", continent: "大洋洲" },
+            { chineseName: "索羅門群島", englishName: "Solomon Islands", flagCode: "SB", continent: "大洋洲" },
+            { chineseName: "萬那杜", englishName: "Vanuatu", flagCode: "VU", continent: "大洋洲" },
+            { chineseName: "東加", englishName: "Tonga", flagCode: "TO", continent: "大洋洲" },
+            { chineseName: "薩摩亞", englishName: "Samoa", flagCode: "WS", continent: "大洋洲" },
+            { chineseName: "吉里巴斯", englishName: "Kiribati", flagCode: "KI", continent: "大洋洲" },
+            { chineseName: "密克羅尼西亞", englishName: "Micronesia", flagCode: "FM", continent: "大洋洲" },
+            { chineseName: "馬紹爾群島", englishName: "Marshall Islands", flagCode: "MH", continent: "大洋洲" },
+            { chineseName: "諾魯", englishName: "Nauru", flagCode: "NR", continent: "大洋洲" },
+            { chineseName: "帛琉", englishName: "Palau", flagCode: "PW", continent: "大洋洲" },
+            { chineseName: "吐瓦魯", englishName: "Tuvalu", flagCode: "TV", continent: "大洋洲" },
+            { chineseName: "阿爾巴尼亞", englishName: "Albania", flagCode: "AL", continent: "歐洲" },
+            { chineseName: "波士尼亞與赫塞哥維納", englishName: "Bosnia and Herzegovina", flagCode: "BA", continent: "歐洲" },
+            { chineseName: "蒙特內哥羅", englishName: "Montenegro", flagCode: "ME", continent: "歐洲" },
+            { chineseName: "北馬其頓", englishName: "North Macedonia", flagCode: "MK", continent: "歐洲" },
+            { chineseName: "科索沃", englishName: "Kosovo", flagCode: "XK", continent: "歐洲" }, /* XK is user-assigned code for Kosovo */
+            { chineseName: "馬爾他", englishName: "Malta", flagCode: "MT", continent: "歐洲" },
+            { chineseName: "盧森堡", englishName: "Luxembourg", flagCode: "LU", continent: "歐洲" },
+            { chineseName: "列支敦斯登", englishName: "Liechtenstein", flagCode: "LI", continent: "歐洲" },
+            { chineseName: "摩納哥", englishName: "Monaco", flagCode: "MC", continent: "歐洲" },
+            { chineseName: "聖馬利諾", englishName: "San Marino", flagCode: "SM", continent: "歐洲" },
+            { chineseName: "梵蒂岡", englishName: "Vatican City", flagCode: "VA", continent: "歐洲" },
+            { chineseName: "安道爾", englishName: "Andorra", flagCode: "AD", continent: "歐洲" },
+            { chineseName: "冰島", englishName: "Iceland", flagCode: "IS", continent: "歐洲" },
+            { chineseName: "白俄羅斯", englishName: "Belarus", flagCode: "BY", continent: "歐洲" },
+            { chineseName: "摩爾多瓦", englishName: "Moldova", flagCode: "MD", continent: "歐洲" },
+            { chineseName: "烏茲別克", englishName: "Uzbekistan", flagCode: "UZ", continent: "亞洲" },
+            { chineseName: "土庫曼", englishName: "Turkmenistan", flagCode: "TM", continent: "亞洲" },
+            { chineseName: "塔吉克", englishName: "Tajikistan", flagCode: "TJ", continent: "亞洲" },
+            { chineseName: "吉爾吉斯", englishName: "Kyrgyzstan", flagCode: "KG", continent: "亞洲" },
+            { chineseName: "阿富汗", englishName: "Afghanistan", flagCode: "AF", continent: "亞洲" },
+            { chineseName: "不丹", englishName: "Bhutan", flagCode: "BT", continent: "亞洲" },
+            { chineseName: "緬甸", englishName: "Myanmar", flagCode: "MM", continent: "亞洲" },
+            { chineseName: "寮國", englishName: "Laos", flagCode: "LA", continent: "亞洲" },
+            { chineseName: "柬埔寨", englishName: "Cambodia", flagCode: "KH", continent: "亞洲" },
+            { chineseName: "東帝汶", englishName: "Timor-Leste", flagCode: "TL", continent: "亞洲" },
+            { chineseName: "汶萊", englishName: "Brunei", flagCode: "BN", continent: "亞洲" },
+        ];
+        // --- 國家資料結束 ---
+
+        // Function to update the content of the slot display area.
+        function updateSlotDisplay(country) {
+            slotFlag.textContent = getFlagEmoji(country.flagCode); // Set the flag emoji
+            slotCountryName.textContent = country.chineseName; // Set the Chinese country name
+        }
+
+        // Main animation loop for the spinning effect.
+        // This function is called repeatedly using setTimeout to create the animation.
+        function spinAnimationLoop() {
+            // If spinning is false, stop the loop.
+            if (!spinning) return;
+
+            // Calculate elapsed time since the animation started.
+            const elapsedTime = Date.now() - animationStartTime;
+            let currentDelay = baseFrameInterval; // Start with the base interval
+
+            // If the total animation duration has not passed yet, continue spinning.
+            if (elapsedTime < totalAnimationDuration) {
+                // Calculate progress (0 to 1) of the animation.
+                const progress = elapsedTime / totalAnimationDuration;
+                // Apply a cubic easing function to the progress for a smoother slowdown effect.
+                // This makes the slot slow down more dramatically towards the end.
+                const easedProgress = progress * progress * progress;
+                
+                // Increase the delay between frames significantly as progress increases.
+                // This creates the slowing down effect.
+                currentDelay = baseFrameInterval + (baseFrameInterval * 15 * easedProgress);
+
+                // Move to the next country in the array, looping back to the beginning if needed.
+                currentCountryIndex = (currentCountryIndex + 1) % countries.length;
+                // Update the display with the new country.
+                updateSlotDisplay(countries[currentCountryIndex]);
+
+                // Add a subtle vertical bounce animation to the slot display during spin.
+                // Math.sin creates a wave-like motion, making it more dynamic.
+                slotDisplay.style.transform = `translateY(${Math.sin(elapsedTime / 100) * 8}px)`;
+                // Apply a quick transition for the bounce effect.
+                slotDisplay.style.transition = 'transform 0.05s ease-out';
+
+                // Schedule the next frame of the animation.
+                setTimeout(spinAnimationLoop, currentDelay);
+            } else {
+                // Animation time is up, stop the spinning.
+                // Choose a random country as the final result.
+                const finalIndex = Math.floor(Math.random() * countries.length);
+                currentCountryIndex = finalIndex; // Set the current index to the final chosen country
+                updateSlotDisplay(countries[currentCountryIndex]); // Update display one last time
+                stopSpinning(); // Call the function to finalize the spin
+            }
+        }
+
+        // Function to start the spinning animation.
+        function startSpinning() {
+            // Prevent starting a new spin if one is already in progress.
+            if (spinning) return;
+            // If there are no countries to choose from, display a message and disable the button.
+            if (countries.length === 0) {
+                resultDisplay.textContent = "沒有國家資料可供抽籤！";
+                return;
+            }
+
+            spinning = true; // Set spinning state to true
+            startButton.disabled = true; // Disable the start button during spin
+            resultDisplay.innerHTML = ''; // Clear any previous result text
+            recommendButton.style.display = 'none'; // Hide the "Recommend" button
+
+            animationStartTime = Date.now(); // Record the start time of the animation
+            spinAnimationLoop(); // Begin the animation loop
+        }
+
+        // Function to stop the spinning animation and display the result.
+        function stopSpinning() {
+            spinning = false; // Set spinning state to false
+            startButton.disabled = false; // Re-enable the start button
+
+            // Reset the slot display's transform properties (remove bounce and scale).
+            slotDisplay.style.transform = 'translateY(0) scale(1)';
+            // Apply a smooth transition for this reset.
+            slotDisplay.style.transition = 'transform 0.3s ease-out';
+
+            // Get the randomly selected country.
+            const selectedCountry = countries[currentCountryIndex];
+            // Update the result display with the flag, Chinese name, and continent.
+            resultDisplay.innerHTML = `<span class="flag-emoji">${getFlagEmoji(selectedCountry.flagCode)}</span> ${selectedCountry.chineseName} (${selectedCountry.continent})`;
+
+            // Add a subtle "pop" animation to the slot display when it stops.
+            // Briefly scale up then back down to draw attention.
+            slotDisplay.style.transform = 'scale(1.05)'; // Scale up slightly
+            setTimeout(() => {
+                slotDisplay.style.transform = 'scale(1)'; // Scale back to normal
+            }, 150); // Short delay for the "pop" effect
+
+
+            // Construct the Perplexity URL with the chosen country's name.
+            // The query is URL-encoded to handle special characters.
+            const perplexityQuery = `請以繁體中文100個字介紹${selectedCountry.chineseName}的熱門景點`;
+            const perplexityUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(perplexityQuery)}`;
+            recommendButton.href = perplexityUrl; // Set the link for the recommend button
+            recommendButton.style.display = 'inline-block'; // Show the "Recommend" button
+        }
+
+        // Add an event listener to the start button to trigger the spinning.
+        startButton.addEventListener('click', startSpinning);
+
+        // Initial setup when the page loads.
+        // If there are countries in the data array, display the first one.
+        // Otherwise, indicate that no data is available and disable the button.
+        if (countries.length > 0) {
+            updateSlotDisplay(countries[0]);
+        } else {
+            slotCountryName.textContent = "無國家資料";
+            startButton.disabled = true;
+        }
+    </script>
+</body>
+</html>
